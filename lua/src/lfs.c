@@ -114,6 +114,7 @@ extern "C" {
 typedef struct dir_data
 {
 	int  closed;
+	int  isExtended;
 #ifdef _WIN32
 	intptr_t hFile;
 	char pattern[MAX_PATH + 1];
@@ -548,6 +549,24 @@ static int remove_dir(lua_State *L)
 	return 1;
 }
 
+void push_file(dir_data * d, lua_State* L, struct _finddata_t* c_file)
+{
+	if (d->isExtended)
+	{
+		lua_newtable(L);
+
+		lua_pushstring(L, "name");
+		lua_pushstring(L, c_file->name);
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "size");
+		lua_pushinteger(L, c_file->size);
+		lua_rawset(L, -3);
+	}
+	else
+		lua_pushstring(L, c_file->name);
+
+}
 
 /*
 ** Directory iterator
@@ -573,7 +592,7 @@ static int dir_iter(lua_State *L)
 		}
 		else
 		{
-			lua_pushstring(L, c_file.name);
+			push_file(d, L, &c_file);
 			return 1;
 		}
 	}
@@ -588,7 +607,7 @@ static int dir_iter(lua_State *L)
 		}
 		else
 		{
-			lua_pushstring(L, c_file.name);
+			push_file(d, L, &c_file);
 			return 1;
 		}
 	}
@@ -643,6 +662,11 @@ static int dir_iter_factory(lua_State *L)
 	luaL_getmetatable(L, DIR_METATABLE);
 	lua_setmetatable(L, -2);
 	d->closed = 0;
+	d->isExtended = 0;
+
+	if (lua_toboolean(L, 2))
+		d->isExtended = 1;
+
 #ifdef _WIN32
 	d->hFile = 0L;
 	if (strlen(path) > MAX_PATH - 2)
