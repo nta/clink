@@ -21,6 +21,9 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#define LFS_LIBNAME "lfs"
+int luaopen_lfs(lua_State *L);
+
 
 /*
 ** these libs are loaded by lua.c and are readily available to any Lua
@@ -37,6 +40,7 @@ static const luaL_Reg loadedlibs[] = {
   {LUA_BITLIBNAME, luaopen_bit32},
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_DBLIBNAME, luaopen_debug},
+  {LFS_LIBNAME, luaopen_lfs},
   {NULL, NULL}
 };
 
