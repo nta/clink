@@ -319,6 +319,13 @@ end:
     return key_char;
 }
 
+static void clear_line()
+{
+	using_history();
+	rl_delete_text(0, rl_end);
+	rl_point = 0;
+}
+
 //------------------------------------------------------------------------------
 int getc_impl(FILE* stream)
 {
@@ -349,6 +356,12 @@ int getc_impl(FILE* stream)
                 rl_redisplay();
                 continue;
             }
+        }
+        if (i == 0x03)
+        {
+            rl_crlf();
+            clear_line();
+            rl_forced_update_display();
         }
 
         // Mask off top bits, they're used to track ALT key state.
