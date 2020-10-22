@@ -350,6 +350,11 @@ int getc_impl(FILE* stream)
                 continue;
             }
         }
+        if (i == 0x03)
+        {
+            rl_crlf();
+            rl_forced_update_display();
+        }
 
         // Mask off top bits, they're used to track ALT key state.
         if (i < 0x80 || (i == 0xe0 && !printable))
