@@ -24,6 +24,8 @@
 #include "vm.h"
 #include "pe.h"
 
+#include <MinHook.h>
+
 //------------------------------------------------------------------------------
 static void* current_proc()
 {
@@ -343,52 +345,12 @@ static void* follow_jump(void* addr)
 //------------------------------------------------------------------------------
 static void* hook_jmp_impl(void* to_hook, void* hook)
 {
-    struct region_info_t region_info;
-    char* trampoline;
-    char* write;
-    int inst_len;
+    void* orig = NULL;
+    MH_Initialize();
+    MH_CreateHook(to_hook, hook, &orig);
+    MH_EnableHook(to_hook);
 
-    LOG_INFO("Attempting to hook at %p with %p", to_hook, hook);
-
-    to_hook = follow_jump(to_hook);
-
-    // Work out the length of the first instruction. It will be copied it into
-    // the trampoline.
-    inst_len = get_instruction_length(to_hook);
-    if (inst_len <= 0)
-    {
-        LOG_INFO("Unable to match instruction %08X", *(int*)(to_hook));
-        return NULL;
-    }
-
-    // Prepare
-    trampoline = write = alloc_trampoline(to_hook);
-    if (trampoline == NULL)
-    {
-        LOG_INFO("Failed to allocate a page for trampolines.");
-        return NULL;
-    }
-
-    // In
-    write = write_trampoline_in(trampoline, to_hook, inst_len);
-    if (write == NULL)
-    {
-        LOG_INFO("Failed to write trampoline in.");
-        return NULL;
-    }
-
-    // Out
-    get_region_info(to_hook, &region_info);
-    set_region_write_state(&region_info, 1);
-    write = write_trampoline_out(write, to_hook, hook);
-    set_region_write_state(&region_info, 0);
-    if (write == NULL)
-    {
-        LOG_INFO("Failed to write trampoline out.");
-        return NULL;
-    }
-
-    return trampoline;
+    return orig;
 }
 
 //------------------------------------------------------------------------------
@@ -404,10 +366,10 @@ void* hook_jmp(const char* dll, const char* func_name, void* hook)
         LOG_INFO("Failed to find function '%s' in '%s'", dll, func_name);
         return NULL;
     }
-
+    
     LOG_INFO("Attemping jump hook.");
     LOG_INFO("Target is %s, %s @ %p", dll, func_name, func_addr);
-
+    
     // Install the hook.
     trampoline = hook_jmp_impl(func_addr, hook);
     if (trampoline == NULL)

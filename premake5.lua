@@ -174,6 +174,23 @@ project("lua")
     excludes("lua/src/luac.c")
 
 --------------------------------------------------------------------------------
+project("minhook")
+    language("c")
+    kind("staticlib")
+
+    files({
+        "vendor/minhook/src/buffer.c",
+        "vendor/minhook/src/hook.c",
+        "vendor/minhook/src/trampoline.c",
+    })
+
+    filter("architecture:x32")
+		files("vendor/minhook/src/hde/hde32.c")
+
+    filter("architecture:x64")
+		files("vendor/minhook/src/hde/hde64.c")
+
+--------------------------------------------------------------------------------
 project("clink_dll")
     language("c")
     kind("sharedlib")
@@ -230,6 +247,8 @@ project("clink_loader")
 project("clink_shared")
     language("c")
     kind("staticlib")
+    includedirs("vendor/minhook/include")
+    links("minhook")
     files("clink/shared/*")
 
     configuration("vs*")
