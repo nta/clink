@@ -21,6 +21,13 @@
 --
 
 --------------------------------------------------------------------------------
+newoption {
+   trigger     = "clink_ver",
+   value       = "VER",
+   description = "The version of clink to build or being built."
+}
+
+--------------------------------------------------------------------------------
 function get_current_git_branch()
     for line in io.popen("git branch --no-color 2>nul"):lines() do
         local m = line:match("%* (.+)$")
@@ -41,23 +48,6 @@ function get_last_git_commit()
 
     return "?"
 end
-
---------------------------------------------------------------------------------
-function useXpToolset(base, cfg)
-    local p = "v110_xp"
-    if _ACTION > "vs2012" then
-        p = "v120_xp"
-    end 
-
-    if _ACTION > "vs2010" then
-        _p(2,'<PlatformToolset>%s</PlatformToolset>', p)
-    end
-end
-premake.override(premake.vstudio.vc2010, 'platformToolset', useXpToolset)
-
---------------------------------------------------------------------------------
--- Work around a bug in Premake5
-path.normalize = function(i) return i end
 
 --------------------------------------------------------------------------------
 clink_ver = _OPTIONS["clink_ver"] or "DEV"
@@ -115,8 +105,8 @@ solution("clink")
     location(to)
 
     characterset("MBCS")
-    flags("Symbols")
-    flags("StaticRuntime")
+    symbols("On")
+    staticruntime("On")
     defines("HAVE_CONFIG_H")
     defines("HANDLE_MULTIBYTE")
     defines("CLINK_VERSION=AS_STR("..clink_ver..")")
@@ -282,13 +272,6 @@ project("clink_test")
         links("dbghelp")
         pchsource("clink/dll/pch.c")
         pchheader("pch.h")
-
---------------------------------------------------------------------------------
-newoption {
-   trigger     = "clink_ver",
-   value       = "VER",
-   description = "The version of clink to build or being built."
-}
 
 --------------------------------------------------------------------------------
 dofile("docs/premake5.lua")
